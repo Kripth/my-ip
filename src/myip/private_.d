@@ -1,12 +1,12 @@
 ﻿module myip.private_;
 
+import std.string : fromStringz;
+
 nothrow string[] privateAddresses() {
 
 	string[] addresses;
 
 	version(Windows) {
-
-		import std.string : fromStringz;
 
 		import core.sys.windows.windef;
 		import core.sys.windows.winsock2;
@@ -55,34 +55,36 @@ nothrow string[] privateAddresses() {
 
 	} else version(Posix) {
 
+		import core.sys.posix.netdb;
 		import core.sys.posix.netinet.in_;
 
 		ifaddrs* result, ptr;
 		void* in_addr;
-		char[64] buffer;
 
 		if(getifaddrs(&result) == 0) {
 
-			/*for(ptr=result; ptr !is null; ptr=ptr.ifa_next) {
+			char[255] host;
+
+			void add(const(sockaddr)* sa, socklen_t salen) {
+				if(getnameinfo(sa, salen, host.ptr, 255, null, 0, NI_NUMERICHOST) == 0) {
+					addresses ~= fromStringz(host.ptr).idup;
+				}
+			}
+			
+			for(ptr=result; ptr !is null; ptr=ptr.ifa_next) {
 				if(ptr.ifa_addr) {
-					writeln(ptr.ifa_flags);
 					switch(ptr.ifa_addr.sa_family) {
 						case AF_INET:
-							auto s4 = cast(sockaddr_in*)ptr.ifa_addr;
-							in_addr = &s4.sin_addr;
+							add(ptr.ifa_addr, sockaddr_in.sizeof);
 							break;
 						case AF_INET6:
-							auto s6 = cast(sockaddr_in6*)ptr.ifa_addr;
-							in_addr = &s6.sin6_addr;
+							add(ptr.ifa_addr, sockaddr_in6.sizeof);
 							break;
 						default:
 							continue;
 					}
-					if(inet_ntop(ptr.ifa_addr.sa_family, in_addr, buffer.ptr, 64)) {
-						writeln(fromStringz(buffer.ptr));
-					}
 				}
-			}*/
+			}
 
 			freeifaddrs(result);
 			
@@ -103,6 +105,8 @@ version(Posix) {
 	extern (C):
 	nothrow:
 	@nogc:
+
+	int getnameinfo(const(sockaddr)*, socklen_t, char*, socklen_t, char*, socklen_t, int);
 
 	struct ifaddrs
 	{

@@ -1,5 +1,5 @@
 name "my-ip"
-description "Get your local and public addresses"
+description "Get your private and public ip addresses"
 authors "Kripth"
 license "MIT"
 targetType "library"
