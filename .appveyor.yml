@@ -71,6 +71,6 @@ before_build:
   - mkdir plugins
 
 build_script:
-  - dub build -c %DC% -a %Darch% -b %CONFIGURATION%
+  - dub build --compiler=%DC% -a %Darch% -b %CONFIGURATION%
   - cd examples\local
-  - dub run -c %DC% -a %Darch% -b %CONFIGURATION%
+  - dub run --compiler=%DC% -a %Darch% -b %CONFIGURATION%
