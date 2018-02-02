@@ -1,0 +1,8 @@
+.dub
+*.exe
+*.lib
+*.obj
+*.o
+*.a
+*.userprefs
+*.selections.json

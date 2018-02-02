@@ -1,0 +1,7 @@
+name "my-ip"
+description "Get your local and public addresses"
+authors "Kripth"
+license "MIT"
+targetType "library"
+
+libs "ws2_32" platform="windows"
