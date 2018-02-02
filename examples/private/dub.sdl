@@ -1,0 +1,4 @@
+name "my-ip-example-private"
+dependency "my-ip" path="../.."
+targetType "executable"
+targetPath "../.."

@@ -10,5 +10,10 @@ os:
 
 script:
  - dub build
- - cd examples/local
- - dub run
+ - cd examples/public
+ - dub build
+ - cd ../private
+ - dub build
+ - cd ../..
+ - ./my-ip-examples-private
+ - ./my-ip-examples-public

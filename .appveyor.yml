@@ -72,5 +72,12 @@ before_build:
 
 build_script:
   - dub build --compiler=%DC% -a %Darch% -b %CONFIGURATION%
-  - cd examples\local
+  - cd examples\public
+  - dub build --compiler=%DC% -a %Darch% -b %CONFIGURATION%
+  - cd ..\private
   - dub run --compiler=%DC% -a %Darch% -b %CONFIGURATION%
+  - cd ..\..
+  
+test_script:
+  - my-ip-example-public
+  - my-ip-example-private

@@ -1,2 +1,0 @@
-name "my-ip-example-local"
-dependency "my-ip" path="../.."

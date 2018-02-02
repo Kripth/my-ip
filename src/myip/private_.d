@@ -1,6 +1,6 @@
-﻿module myip.local;
+﻿module myip.private_;
 
-nothrow string[] localAddresses() {
+nothrow string[] privateAddresses() {
 
 	string[] addresses;
 

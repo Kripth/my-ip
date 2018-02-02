@@ -25,10 +25,10 @@ module app;
 import std.stdio : writeln;
 import std.string : join;
 
-import myip.local;
+import myip.private_;
 
 void main() {
 
-	writeln("Local addresses: ", localAddresses.join(", "));
+	writeln("Private addresses: ", privateAddresses.join(", "));
 
 }
