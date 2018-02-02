@@ -17,6 +17,8 @@ struct Service {
 
 }
 
+private enum empty = "";
+
 @safe string publicAddress(Service service=Service.ipify, AddressFamily addressFamily=AddressFamily.INET) {
 
 	Address address;
@@ -30,18 +32,19 @@ struct Service {
 				break;
 			default:
 				// unsupported address family
-				return "";
+				return empty;
 		}
 	} catch(SocketException) {
 		// failed to resolve hostname
-		return "";
+		return empty;
 	}
 
 	Socket socket = new TcpSocket(addressFamily);
 	socket.blocking = true;
 	socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO, dur!"seconds"(5));
 	socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO, dur!"seconds"(5));
-	socket.connect(address);
+	try socket.connect(address);
+	catch(SocketException) return empty;
 
 	if(socket.send("GET " ~ service.path ~ " HTTP/1.1\r\nHost: " ~ service.host ~ "\r\nAccept: text/plain\r\n\r\n") != Socket.ERROR) {
 	
@@ -59,7 +62,7 @@ struct Service {
 
 	}
 
-	return "";
+	return empty;
 
 }
 
