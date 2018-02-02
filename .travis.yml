@@ -15,5 +15,5 @@ script:
  - cd ../private
  - dub build
  - cd ../..
- - ./my-ip-examples-private
- - ./my-ip-examples-public
+ - ./my-ip-example-private
+ - ./my-ip-example-public

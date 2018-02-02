@@ -28,7 +28,12 @@ import myip.public_;
 
 void main() {
 
-	writeln("Public address (ipv4): ", publicAddress4);
-	writeln("Public address (ipv6): ", publicAddress6);
+	foreach(member ; __traits(allMembers, Service)) {
+		mixin("alias service = Service." ~ member ~ ";");
+		static if(is(typeof(service) == Service)) {
+			writeln("Public address using ", member, " (ipv4): ", publicAddress4(service));
+			writeln("Public address using ", member, " (ipv6): ", publicAddress6(service));
+		}
+	}
 
 }

@@ -2,11 +2,15 @@
 
 import std.datetime : dur;
 import std.socket : Socket, SocketException, TcpSocket, Address, InternetAddress, Internet6Address, AddressFamily, SocketOption, SocketOptionLevel;
-import std.string : indexOf;
+import std.string : indexOf, strip;
 
 struct Service {
 
-	enum ipify = Service("api.ipify.org", "/");
+	enum ipify = Service("api.ipify.org", "/");							/// https://www.ipify.org/
+	enum plain_text_ip = Service("plain-text-ip.com", "/");				/// http://about.plain-text-ip.com/
+	enum icanhazip = Service("icanhazip.com", "/");						/// http://icanhazip.com/
+	enum whatismyipaddress = Service("bot.whatismyipaddress.com", "/");	/// https://whatismyipaddress.com/api
+	enum amazonws = Service("checkip.amazonaws.com", "/");				/// http://checkip.amazonaws.com/
 
 	string host;
 	string path;
@@ -49,7 +53,7 @@ struct Service {
 
 			immutable bodyStart = buffer.indexOf("\r\n\r\n") + 4;
 			
-			if(bodyStart < recv) return buffer[bodyStart..recv].idup;
+			if(bodyStart < recv) return buffer[bodyStart..recv].idup.strip;
 
 		}
 
@@ -69,12 +73,4 @@ struct Service {
 
 @safe string publicAddress6(Service service=Service.ipify) {
 	return publicAddress(service, AddressFamily.INET6);
-}
-
-unittest {
-
-	import std.stdio;
-	writeln(publicAddress4());
-	writeln(publicAddress6());
-
 }
