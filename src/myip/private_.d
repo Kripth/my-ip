@@ -2,14 +2,39 @@
 
 import std.string : fromStringz;
 
+version(Windows) {
+	
+	import core.sys.windows.windef;
+	import core.sys.windows.winsock2;
+
+} else version(Posix) {
+
+	import core.sys.posix.netdb;
+	import core.sys.posix.netinet.in_;
+	import core.sys.posix.sys.socket;
+
+}
+
 nothrow string[] privateAddresses() {
 
 	string[] addresses;
 
-	version(Windows) {
+	char[64] ip;
 
-		import core.sys.windows.windef;
-		import core.sys.windows.winsock2;
+	nothrow string add(const(sockaddr)* sa, socklen_t salen) {
+		getnameinfo(sa, salen, ip.ptr, 64, null, 0, NI_NUMERICHOST);
+		return fromStringz(ip.ptr).idup;
+	}
+
+	nothrow void add4(const(sockaddr)* sa) {
+		addresses ~= add(sa, sockaddr_in.sizeof);
+	}
+
+	nothrow void add6(const(sockaddr)* sa) {
+		addresses ~= add(sa, sockaddr_in6.sizeof);
+	}
+
+	version(Windows) {
 
 		WORD versionRequested = MAKEWORD(1, 0);
 		WSADATA wsaData;
@@ -24,23 +49,15 @@ nothrow string[] privateAddresses() {
 			hints.ai_socktype = SOCK_STREAM;
 			hints.ai_protocol = IPPROTO_TCP;
 
-			if(getaddrinfo(name.ptr, NULL, &hints, &result) == 0) {
-				
-				char[255] host;
-				
-				void add(const(sockaddr)* sa, socklen_t salen) {
-					if(getnameinfo(sa, salen, host.ptr, 255, NULL, 0, NI_NUMERICHOST) == 0) {
-						addresses ~= fromStringz(host.ptr).idup;
-					}
-				}
+			if(getaddrinfo(name.ptr, null, &hints, &result) == 0) {
 
-				for(ptr=result; ptr != NULL; ptr=ptr.ai_next) {
+				for(ptr=result; ptr !is null; ptr=ptr.ai_next) {
 					switch(ptr.ai_family) {
 						case AF_INET:
-							add(ptr.ai_addr, sockaddr_in.sizeof);
+							add4(ptr.ai_addr);
 							break;
 						case AF_INET6:
-							add(ptr.ai_addr, sockaddr_in6.sizeof);
+							add6(ptr.ai_addr);
 							break;
 						default:
 							break;
@@ -55,30 +72,19 @@ nothrow string[] privateAddresses() {
 
 	} else version(Posix) {
 
-		import core.sys.posix.netdb;
-		import core.sys.posix.netinet.in_;
-
-		ifaddrs* result, ptr;
+		ifaddrs* ifap, ifa;
 		void* in_addr;
 
-		if(getifaddrs(&result) == 0) {
+		if(getifaddrs(&ifap) == 0) {
 
-			char[255] host;
-
-			void add(const(sockaddr)* sa, socklen_t salen) {
-				if(getnameinfo(sa, salen, host.ptr, 255, null, 0, NI_NUMERICHOST) == 0) {
-					addresses ~= fromStringz(host.ptr).idup;
-				}
-			}
-			
-			for(ptr=result; ptr !is null; ptr=ptr.ifa_next) {
-				if(ptr.ifa_addr) {
-					switch(ptr.ifa_addr.sa_family) {
+			for(ifa=ifap; ifa; ifa=ifa.ifa_next) {
+				if(ifa.ifa_addr && (ifa.ifa_flags & 2)) {
+					switch(ifa.ifa_addr.sa_family) {
 						case AF_INET:
-							add(ptr.ifa_addr, sockaddr_in.sizeof);
+							add4(ifa.ifa_addr);
 							break;
 						case AF_INET6:
-							add(ptr.ifa_addr, sockaddr_in6.sizeof);
+							add6(ifa.ifa_addr);
 							break;
 						default:
 							continue;
@@ -86,7 +92,7 @@ nothrow string[] privateAddresses() {
 				}
 			}
 
-			freeifaddrs(result);
+			freeifaddrs(ifap);
 			
 		}
 	
@@ -96,46 +102,41 @@ nothrow string[] privateAddresses() {
 
 }
 
+void main(string[] argss) {
+
+	import std.stdio : writeln;
+	writeln(privateAddresses);
+
+}
+
 version(Posix) {
-
-	// https://github.com/dlang/druntime/blob/master/src/core/sys/linux/ifaddrs.d
-
-	import core.sys.posix.sys.socket;
 
 	extern (C):
 	nothrow:
 	@nogc:
 
-	int getnameinfo(const(sockaddr)*, socklen_t, char*, socklen_t, char*, socklen_t, int);
+	struct ifaddrs {
 
-	struct ifaddrs
-	{
-		/// Next item in the list
-		ifaddrs*         ifa_next;
-		/// Name of the interface
-		char*            ifa_name;
-		/// Flags from SIOCGIFFLAGS
-		uint      ifa_flags;
-		/// Address of interface
+		ifaddrs* ifa_next;
+		char* ifa_name;
+		uint ifa_flags;
 		sockaddr* ifa_addr;
-		/// Netmask of interface
 		sockaddr* ifa_netmask;
 		
-		union
-		{
-			/// Broadcast address of the interface
-			sockaddr* ifu_broadaddr;
-			/// Point-to-point destination addresss
-			sockaddr* if_dstaddr;
-		}
-		
-		/// Address specific data
-		void* ifa_data;
-	};
+		union {
 
-	/// Returns: linked list of ifaddrs structures describing interfaces
-	int getifaddrs(ifaddrs** );
-	/// Frees the linked list returned by getifaddrs
-	void freeifaddrs(ifaddrs* );
+			sockaddr* ifu_broadaddr;
+			sockaddr* ifu_dstaddr;
+
+		}
+
+		void* ifa_data;
+
+	}
+
+	int getifaddrs(ifaddrs**);
+	void freeifaddrs(ifaddrs*);
+	
+	int getnameinfo(const(sockaddr)*, socklen_t, char*, socklen_t, char*, socklen_t, int);
 
 }
