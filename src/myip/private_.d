@@ -15,26 +15,49 @@ version(Windows) {
 
 }
 
+enum Exclude {
+
+	IPV4 = 1<<0,
+	IPV6 = 1<<1,
+	INTERFACE = 1<<2,
+
+}
+
 /**
  * Gets the private ip address of the machine.
  */
-nothrow string[] privateAddresses() {
+nothrow string[] privateAddresses(uint exclude=0) {
 
 	string[] addresses;
 
-	char[64] ip;
+	immutable ipv4 = !(exclude & Exclude.IPV4);
+	immutable ipv6 = !(exclude & Exclude.IPV6);
+	immutable interface_ = exclude & Exclude.INTERFACE;
 
 	nothrow string add(const(sockaddr)* sa, socklen_t salen) {
+		char[64] ip;
 		getnameinfo(sa, salen, ip.ptr, 64, null, 0, NI_NUMERICHOST);
 		return fromStringz(ip.ptr).idup;
 	}
 
 	nothrow void add4(const(sockaddr)* sa) {
-		addresses ~= add(sa, sockaddr_in.sizeof);
+		if(ipv4) addresses ~= add(sa, sockaddr_in.sizeof);
 	}
 
 	nothrow void add6(const(sockaddr)* sa) {
-		addresses ~= add(sa, sockaddr_in6.sizeof);
+		if(ipv6) {
+			string address = add(sa, sockaddr_in6.sizeof);
+			if(interface_) {
+				// std.string.indexOf is not nothrow
+				foreach(i, c; address) {
+					if(c == '%') {
+						address = address[0..i];
+						break;
+					}
+				}
+			}
+			addresses ~= address;
+		}
 	}
 
 	version(Windows) {
@@ -105,6 +128,15 @@ nothrow string[] privateAddresses() {
 
 }
 
+nothrow privateAddresses4() {
+	return privateAddresses(Exclude.IPV6);
+}
+
+nothrow privateAddresses6(bool excludeInterface=false) {
+	if(excludeInterface) return privateAddresses(Exclude.IPV4 | Exclude.INTERFACE);
+	else return privateAddresses(Exclude.IPV4);
+}
+
 version(Posix) {
 
 	extern (C):
@@ -141,5 +173,8 @@ unittest {
 
 	import std.stdio : writeln;
 	writeln(privateAddresses);
+	writeln(privateAddresses4);
+	writeln(privateAddresses6);
+	writeln(privateAddresses6(true));
 
 }
