@@ -9,11 +9,4 @@ os:
  - osx
 
 script:
- - dub build
- - cd examples/public
- - dub build
- - cd ../private
- - dub build
- - cd ../..
- - ./my-ip-example-private
- - ./my-ip-example-public
+ - dub test

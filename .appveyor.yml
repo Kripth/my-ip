@@ -71,13 +71,4 @@ before_build:
   - mkdir plugins
 
 build_script:
-  - dub build --compiler=%DC% -a %Darch% -b %CONFIGURATION%
-  - cd examples\public
-  - dub build --compiler=%DC% -a %Darch% -b %CONFIGURATION%
-  - cd ..\private
-  - dub run --compiler=%DC% -a %Darch% -b %CONFIGURATION%
-  - cd ..\..
-  
-test_script:
-  - my-ip-example-public
-  - my-ip-example-private
+  - dub test --compiler=%DC% -a %Darch% -b %CONFIGURATION%

@@ -15,6 +15,9 @@ version(Windows) {
 
 }
 
+/**
+ * Gets the private ip address of the machine.
+ */
 nothrow string[] privateAddresses() {
 
 	string[] addresses;
@@ -102,13 +105,6 @@ nothrow string[] privateAddresses() {
 
 }
 
-void main(string[] argss) {
-
-	import std.stdio : writeln;
-	writeln(privateAddresses);
-
-}
-
 version(Posix) {
 
 	extern (C):
@@ -138,5 +134,12 @@ version(Posix) {
 	void freeifaddrs(ifaddrs*);
 	
 	int getnameinfo(const(sockaddr)*, socklen_t, char*, socklen_t, char*, socklen_t, int);
+
+}
+
+unittest {
+
+	import std.stdio : writeln;
+	writeln(privateAddresses);
 
 }
