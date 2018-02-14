@@ -41,7 +41,11 @@ nothrow string[] privateAddresses(uint exclude=0) {
 	}
 
 	nothrow void add4(const(sockaddr)* sa) {
-		if(ipv4) addresses ~= add(sa, sockaddr_in.sizeof);
+		if(ipv4) {
+			string address = add(sa, sockaddr_in.sizeof);
+			version(Posix) if(address == "127.0.0.1") return;
+			addresses ~= address;
+		}
 	}
 
 	nothrow void add6(const(sockaddr)* sa) {
@@ -56,6 +60,7 @@ nothrow string[] privateAddresses(uint exclude=0) {
 					}
 				}
 			}
+			version(Posix) if(address == "::1") return;
 			addresses ~= address;
 		}
 	}
@@ -104,7 +109,7 @@ nothrow string[] privateAddresses(uint exclude=0) {
 		if(getifaddrs(&ifap) == 0) {
 
 			for(ifa=ifap; ifa; ifa=ifa.ifa_next) {
-				if(ifa.ifa_addr && (ifa.ifa_flags & 2)) {
+				if(ifa.ifa_addr) {
 					switch(ifa.ifa_addr.sa_family) {
 						case AF_INET:
 							add4(ifa.ifa_addr);
@@ -128,11 +133,11 @@ nothrow string[] privateAddresses(uint exclude=0) {
 
 }
 
-nothrow privateAddresses4() {
+nothrow string[] privateAddresses4() {
 	return privateAddresses(Exclude.IPV6);
 }
 
-nothrow privateAddresses6(bool excludeInterface=false) {
+nothrow string[] privateAddresses6(bool excludeInterface=false) {
 	if(excludeInterface) return privateAddresses(Exclude.IPV4 | Exclude.INTERFACE);
 	else return privateAddresses(Exclude.IPV4);
 }
