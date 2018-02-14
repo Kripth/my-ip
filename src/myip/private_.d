@@ -173,13 +173,3 @@ version(Posix) {
 	int getnameinfo(const(sockaddr)*, socklen_t, char*, socklen_t, char*, socklen_t, int);
 
 }
-
-unittest {
-
-	import std.stdio : writeln;
-	writeln(privateAddresses);
-	writeln(privateAddresses4);
-	writeln(privateAddresses6);
-	writeln(privateAddresses6(true));
-
-}

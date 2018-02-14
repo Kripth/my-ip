@@ -1,0 +1,3 @@
+name "app"
+targetType "executable"
+dependency "my-ip" path=".."

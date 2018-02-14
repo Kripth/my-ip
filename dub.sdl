@@ -3,5 +3,6 @@ description "Get your private and public ip addresses"
 authors "Kripth"
 license "MIT"
 targetType "library"
-
 libs "ws2_32" platform="windows"
+
+subPackage "app"

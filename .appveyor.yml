@@ -71,4 +71,4 @@ before_build:
   - mkdir plugins
 
 build_script:
-  - dub test --compiler=%DC% -a %Darch% -b %CONFIGURATION%
+  - dub run --compiler=%DC% -a %Darch% -b %CONFIGURATION% :app -- --pretty --all

@@ -77,16 +77,3 @@ private enum empty = "";
 @safe string publicAddress6(Service service=Service.ipify) {
 	return publicAddress(service, AddressFamily.INET6);
 }
-
-unittest {
-
-	import std.stdio : writeln;
-
-	foreach(member ; __traits(allMembers, Service)) {
-		mixin("alias service = Service." ~ member ~ ";");
-		static if(is(typeof(service) == Service)) {
-			writeln(member, ": ", publicAddress4(service), ", ", publicAddress6(service));
-		}
-	}
-
-}

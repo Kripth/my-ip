@@ -9,4 +9,4 @@ os:
  - osx
 
 script:
- - dub test
+ - dub test --compiler=$DC -- --pretty --all
