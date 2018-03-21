@@ -24,7 +24,7 @@ enum Exclude {
 }
 
 /**
- * Gets the private ip address of the machine.
+ * Gets the private ip addresses of the machine.
  */
 nothrow string[] privateAddresses(uint exclude=0) {
 

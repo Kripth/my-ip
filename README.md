@@ -19,7 +19,7 @@ The public address is retrieved from a web service throught the `publicAddress` 
 empty string if a problem has occured.
 Specific function to get either ipv4 or ipv6 can be used as `publicAddress4` and `publicAddress6`.
 
-```
+```d
 import myip;
 
 void main(string[] args) {

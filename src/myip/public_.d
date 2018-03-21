@@ -1,8 +1,16 @@
 ﻿module myip.public_;
 
-import std.datetime : dur;
+import std.datetime : Clock, dur;
+import std.file : tempDir, exists, isFile, read, write;
+import std.path : buildPath;
 import std.socket : Socket, SocketException, TcpSocket, Address, InternetAddress, Internet6Address, AddressFamily, SocketOption, SocketOptionLevel;
 import std.string : indexOf, strip;
+
+private immutable string cache;
+
+shared static this() {
+	cache = buildPath(tempDir(), ".dub.my-ip");
+}
 
 struct Service {
 
@@ -17,53 +25,53 @@ struct Service {
 
 }
 
-private enum empty = "";
+@safe string publicAddressImpl(Service service, AddressFamily addressFamily) {
 
-@safe string publicAddress(Service service=Service.ipify, AddressFamily addressFamily=AddressFamily.INET) {
-
-	Address address;
-	try {
+	Address address = {
 		switch(addressFamily) {
-			case AddressFamily.INET:
-				address = new InternetAddress(service.host, 80);
-				break;
-			case AddressFamily.INET6:
-				address = new Internet6Address(service.host, 80);
-				break;
-			default:
-				// unsupported address family
-				return empty;
+			case AddressFamily.INET: return cast(Address)new InternetAddress(service.host, 80);
+			case AddressFamily.INET6: return cast(Address)new Internet6Address(service.host, 80);
+			default: throw new SocketException("Invalid address family");
 		}
-	} catch(SocketException) {
-		// failed to resolve hostname
-		return empty;
-	}
+	}();
 
 	Socket socket = new TcpSocket(addressFamily);
 	socket.blocking = true;
 	socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO, dur!"seconds"(5));
 	socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO, dur!"seconds"(5));
-	try socket.connect(address);
-	catch(SocketException) return empty;
+	socket.connect(address);
+	scope(exit) socket.close();
 
 	if(socket.send("GET " ~ service.path ~ " HTTP/1.1\r\nHost: " ~ service.host ~ "\r\nAccept: text/plain\r\n\r\n") != Socket.ERROR) {
 	
-		char[512] buffer;
-		auto recv = socket.receive(buffer);
-		socket.close();
+		char[] buffer = new char[512];
+		ptrdiff_t recv, body_;
 
-		if(recv != Socket.ERROR) {
-
-			immutable bodyStart = buffer.indexOf("\r\n\r\n") + 4;
-			
-			if(bodyStart < recv) return buffer[bodyStart..recv].idup.strip;
-
-		}
+		if((recv = socket.receive(buffer)) != Socket.ERROR && (body_ = buffer[0..recv].indexOf("\r\n\r\n")) != -1) return buffer[body_+4..recv].idup.strip;
 
 	}
 
-	return empty;
+	throw new SocketException("Could not send or receive data");
 
+}
+
+@trusted string publicAddress(Service service=Service.ipify, AddressFamily addressFamily=AddressFamily.INET) {
+	if(exists(cache) && isFile(cache)) {
+		void[] data = read(cache);
+		if(data.length > 4) {
+			if((cast(int[])data[0..4])[0] + 60 * 60 > Clock.currTime.toUnixTime!int) {
+				// cached less that one hour ago
+				return cast(string)data[4..$];
+			}
+		}
+	}
+	try {
+		string ret = publicAddressImpl(service, addressFamily);
+		write(cache, cast(void[])[Clock.currTime.toUnixTime!int] ~ cast(void[])ret);
+		return ret;
+	} catch(SocketException) {
+		return "";
+	}
 }
 
 @safe string publicAddress(AddressFamily addressFamily) {
